@@ -6,7 +6,7 @@ xhost +
 
 if [ $1 = 'build' ]
 then
-    docker build -t ray0117/ros_melodic_l4t:mavros . -f Dockerfile.l4t
+    docker build -t ryrobotics/ros_melodic_l4t:mavros . -f Dockerfile.l4t
     docker run -it --privileged --net=host \
          --runtime=nvidia \
         --env=LOCAL_USER_ID="$(id -u)" \
@@ -15,11 +15,11 @@ then
         --volume /tmp/.X11-unix:/tmp/.X11-unix:rw \
         --volume ~/src:/src/:rw \
         --restart=always \
-        --name=nx_mavros ray0117/ros_melodic_l4t:mavros bash
+        --name=nx_mavros ryrobotics/ros_melodic_l4t:mavros bash
 
 elif [ $1 = 'build_arm64' ]
 then
-    docker build -t ray0117/ros_mavros_xaviernx:latest . -f Dockerfile.arm64v8
+    docker build -t ryrobotics/ros_mavros_xaviernx:latest . -f Dockerfile.arm64v8
     docker run -it --privileged --net=host \
         --env=LOCAL_USER_ID="$(id -u)" \
         --env="DISPLAY" \
@@ -27,7 +27,7 @@ then
         --volume /tmp/.X11-unix:/tmp/.X11-unix:rw \
         --volume ~/src:/src/:rw \
         --restart=always \
-        --name=nx_mavros ray0117/ros_mavros_xaviernx:latest bash
+        --name=nx_mavros ryrobotics/ros_mavros_xaviernx:latest bash
 fi
 
 # Run docker

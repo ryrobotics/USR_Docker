@@ -1,4 +1,4 @@
-FROM ray0117/ros_melodic_l4t:desktop
+FROM ryrobotics/ros_melodic_l4t:ros_desktop
 
 # install ros packages
 # RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -7,9 +7,10 @@ FROM ray0117/ros_melodic_l4t:desktop
 
 # install mavros
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    ros-melodic-mavros ros-melodic-mavros-extras ros-melodic-mavros-msgs \
-    ros-melodic-vrpn ros-melodic-vrpn-client-ros python3-catkin-tools\
-    wget tmux tmuxinator vim \
+    ros-melodic-mavros ros-melodic-mavros-extras ros-melodic-mavros-msgs ros-melodic-mavros-dbgsym ros-melodic-mavros-extras-dbgsym \
+    ros-melodic-vrpn ros-melodic-vrpn-client-ros ros-melodic-vrpn-client-ros-dbgsym ros-melodic-vrpn-dbgsym \
+    python3-catkin-tools \
+    netbase wget tmux tmuxinator vim \
     && rm -rf /var/lib/apt/lists/* \
     && wget https://raw.githubusercontent.com/mavlink/mavros/master/mavros/scripts/install_geographiclib_datasets.sh \
     && chmod a+x install_geographiclib_datasets.sh \
