@@ -10,13 +10,13 @@ param set-default BAT1_A_PER_V 59.5
 param set-default CBRK_SUPPLY_CHK 894281
 
 # Select the Generic 250 Racer by default
-param set-default SYS_AUTOSTART 4050
+param set-default SYS_AUTOSTART 4001
 
 # use the Q attitude estimator, it works w/o mag or GPS.
-param set-default SYS_MC_EST_GROUP 3
-param set-default ATT_ACC_COMP 0
-param set-default ATT_W_ACC 0.4000
-param set-default ATT_W_GYRO_BIAS 0.0000
+# param set-default SYS_MC_EST_GROUP 3
+# param set-default ATT_ACC_COMP 0
+# param set-default ATT_W_ACC 0.4000
+# param set-default ATT_W_GYRO_BIAS 0.0000
 
 param set-default SYS_HAS_MAG 0
 
@@ -24,3 +24,15 @@ param set-default SYS_HAS_MAG 0
 param set-default CBRK_BUZZER 782090
 
 param set-default IMU_GYRO_RATEMAX 2000
+
+# USR Costum Setting
+param set-default SYS_MC_EST_GROUP 2 # default using ekf2
+param set-default DSHOT_CONFIG 600 # Tekko32 F4 50A
+param set-default NAV_RCL_ACT 3 # using Land Mode after RC Loss
+param set-default MOT_ORDERING 1 # using Betaflight ESC
+param set-default MAV_0_CONFIG 201 # using GPS1<->UART4
+param set-default MAV_1_CONFIG 101 # using TELEM1<->UASRT1
+param set-default SER_GPS1_BAUD 57600 # for MAVLink radio
+param set-default SER_TEL1_BAUD 921600 # for Onboard Computer
+param set-default GPS_1_CONFIG 0 # disable GPS1 for using MAV_0
+param set-default EKF2_MAG_TYPE 5 # none onboard MAG for EKF2
