@@ -15,7 +15,7 @@ elif [ $1 = 'docker' ]
 then
     # Using in the docker environment
     # Recompile cuTT
-    git clone https://github.com/ryrobotics/cutt_lts.git /src/cutt_lts
+    git clone https://gitee.com/jinxer000/cutt_lts.git /src/cutt_lts
     cd /src/cutt_lts
     rm ./build/*
     make
@@ -23,7 +23,7 @@ then
     # Compile GIE Mapping code
     mkdir -p /src/GIE_ws/src
     mkdir -p /src/GIE_ws/GIE_log
-    git clone --depth=1 https://github.com/ryrobotics/GIE-mapping.git /src/GIE_ws/src/GIE-mapping
+    git clone --depth=1 https://github.com/JINXER000/GIE-mapping.git /src/GIE_ws/src/GIE-mapping
 
     cp /src/cutt_lts/lib/libcutt.a /src/GIE_ws/src/GIE-mapping/lib/libcutt.a
     cp /usr/local/cuda-10.2/targets/aarch64-linux/lib/libcudadevrt.a /src/GIE_ws/src/GIE-mapping/lib/libcudadevrt.a
