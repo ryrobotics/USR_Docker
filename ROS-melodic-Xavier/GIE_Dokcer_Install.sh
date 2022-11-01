@@ -10,7 +10,7 @@ then
         --volume /tmp/.X11-unix:/tmp/.X11-unix:rw \
         --volume ~/GIE_src:/src/:rw \
         --restart=always \
-        --name=nx_mapping ryrobotics/ros_melodic_l4t:latest bash
+        --name=nx_mapping ryrobotics/ros_melodic_l4t:nvidia bash
 elif [ $1 = 'docker' ]
 then
     # Using in the docker environment

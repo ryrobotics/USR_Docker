@@ -1,9 +1,10 @@
-FROM ryrobotics/ros_melodic_l4t:ros_desktop
+FROM arm64v8/ros:melodic-perception-bionic
 
-# install ros packages
-# RUN apt-get update && apt-get install -y --no-install-recommends \
-#     ros-melodic-desktop \
-#     && rm -rf /var/lib/apt/lists/*
+# setting for CUDA code
+
+ENV PATH="/usr/local/cuda/bin:${PATH}"
+ENV LD_LIBRARY_PATH="/usr/local/cuda/lib64:${LD_LIBRARY_PATH}"
+RUN echo "$PATH" && echo "$LD_LIBRARY_PATH"
 
 # install mavros & VRPN
 
