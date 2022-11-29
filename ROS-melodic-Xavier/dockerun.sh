@@ -4,7 +4,7 @@
 # enable access to xhost from the container
 xhost +
 
-docker_name='latest'
+docker_name='lio'
 
 if [ $1 = 'build' ]
 then
@@ -22,5 +22,5 @@ then
         --volume /tmp/.X11-unix:/tmp/.X11-unix:rw \
         --volume ~/src:/src/:rw \
         --restart=always \
-        --name=nx_${docker_name} ryrobotics/ros_melodic_l4t:latest bash
+        --name=nx_${docker_name} ryrobotics/ros_melodic_l4t:${docker_name} bash
 fi
