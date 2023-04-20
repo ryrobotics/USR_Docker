@@ -4,7 +4,7 @@
 # enable access to xhost from the container
 xhost +
 
-docker_name='lio'
+docker_name='motion'
 
 if [ $1 = 'build' ]
 then
