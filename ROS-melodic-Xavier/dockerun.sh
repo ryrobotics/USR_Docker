@@ -8,7 +8,7 @@ docker_name='motion'
 
 if [ $1 = 'build' ]
 then
-    docker build -t ryrobotics/ros_melodic_l4t:${docker_name} . -f Dockerfile.l4t
+    docker build -t ryrobotics/ros_melodic_l4t:${docker_name} . -f Dockerfile.l4t.${docker_name}
 fi
 
 # Run docker
