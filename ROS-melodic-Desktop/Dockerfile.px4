@@ -1,16 +1,13 @@
-FROM px4io/px4-dev-ros-melodic
+# For PC without NVIDIA GPU
+# ARG BASE_IMAGE=px4io/px4-dev-ros-melodic
 
-# Just for Nvidia GPU
-# nvidia-container-runtime
-ENV NVIDIA_VISIBLE_DEVICES \
-    ${NVIDIA_VISIBLE_DEVICES:-all}
-ENV NVIDIA_DRIVER_CAPABILITIES \
-    ${NVIDIA_DRIVER_CAPABILITIES:+$NVIDIA_DRIVER_CAPABILITIES,}graphics
+ARG BASE_IMAGE=ryrobotics/ros_melodic_cuda:base
+FROM ${BASE_IMAGE}
 
 # install ros packages
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    ros-melodic-desktop-full \
-    && rm -rf /var/lib/apt/lists/*
+# RUN apt-get update && apt-get install -y --no-install-recommends \
+#     ros-melodic-desktop-full \
+#     && rm -rf /var/lib/apt/lists/*
 
 # install mavros & VRPN
 
