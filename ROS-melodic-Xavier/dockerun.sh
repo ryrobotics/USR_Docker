@@ -4,7 +4,7 @@
 # enable access to xhost from the container
 xhost +
 
-docker_name='motion'
+docker_name=$2
 
 if [ $1 = 'build' ]
 then
