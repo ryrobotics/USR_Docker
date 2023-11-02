@@ -1,0 +1,173 @@
+#
+# this dockerfile roughly follows the 'Ubuntu install of ROS Melodic' from:
+#   http://wiki.ros.org/melodic/Installation/Ubuntu
+#
+ARG BASE_IMAGE=ryrobotics/ros_melodic_l4t:ceres
+FROM ${BASE_IMAGE}
+
+ENV ROS_DISTRO=melodic
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+WORKDIR /opt
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        software-properties-common \
+        apt-utils \
+        net-tools \
+        bash-completion \
+        python3-pip \
+        libcurl4-openssl-dev \
+        && rm -rf /var/lib/apt/lists/*
+
+################################################################################################################################
+#
+# OpenCV
+#
+# remove prebuilt opencv
+RUN apt-get purge -y libopencv* python-opencv \
+    && apt-get update \
+    && apt-get install -y --no-install-recommends \
+    build-essential pkg-config file\
+    cmake libavcodec-dev libavformat-dev libavutil-dev \
+    libglew-dev libgtk2.0-dev libgtk-3-dev libjpeg-dev libpng-dev libpostproc-dev \
+    libswscale-dev libtbb-dev libtiff5-dev libv4l-dev libxvidcore-dev \
+    libx264-dev qt5-default zlib1g-dev libgl1 libglvnd-dev pkg-config \
+    libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev mesa-utils \
+    python2.7-dev python3-dev python-numpy python3-numpy \
+    && rm -rf /var/lib/apt/lists/*
+
+# OpenCV looks for the cuDNN version in cudnn_version.h, but it's been renamed to cudnn_version_v8.h
+RUN ln -s /usr/include/aarch64-linux-gnu/cudnn_version_v8.h /usr/include/aarch64-linux-gnu/cudnn_version.h
+
+# references to related OpenCV compilation problems:
+# Ref1: https://forums.developer.nvidia.com/t/opencv-with-gl-support-at-xavier/76752
+# Ref2: https://forums.developer.nvidia.com/t/building-opencv-with-opengl-support/49741/17
+# WARNING: The following COPY won't work as /usr/local/cuda/ is actually a mounted volume from the host!
+# You will need to modify /usr/local/cuda/include/cuda_gl_interop.h on the HOST system
+# COPY ./packages/cuda_gl_interop.h /usr/local/cuda/include/
+# COPY ./packages/cuda_gl_interop.h /usr/local/cuda-10.2/include/
+RUN cd /usr/lib/aarch64-linux-gnu/ &&\
+    ln -sf libGL.so.1.0.0 libGL.so
+
+# ARG OPENCV_VERSION="3.4.1"
+ARG OPENCV_VERSION="3.4.5"
+RUN git clone https://github.com/ryrobotics/USR_Docker /opt/USR_Docker &&\
+    cd /opt/USR_Docker/OpenCV &&\
+    tar -zxvf OpenCV-3.4.5-aarch64.tar.gz &&\
+    dpkg -i OpenCV*.deb &&\
+    rm -rf /opt/USR_Docker
+
+# Check opencv verison
+RUN pkg-config --modversion opencv
+
+################################################################################################################################
+#
+# Realsense SDK
+#
+
+# RUN apt-get update && apt-get install -y apt-utils software-properties-common \
+#     && apt-key adv --keyserver keys.gnupg.net --recv-key F6E65AC044F831AC80A06380C8B3A55A6F3EFCDE || apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-key F6E65AC044F831AC80A06380C8B3A55A6F3EFCDE \
+#     && add-apt-repository "deb https://librealsense.intel.com/Debian/apt-repo bionic main" -u \
+#     && apt-get install -y ros-melodic-ddynamic-reconfigure \
+#        librealsense2=2.30.0-5ubuntu5~1.gbp9f99fa \
+#        librealsense2-gl=2.30.0-5ubuntu5~1.gbp9f99fa \
+#        librealsense2-utils=2.30.0-5ubuntu5~1.gbp9f99fa \
+#        librealsense2-dev=2.30.0-5ubuntu5~1.gbp9f99fa \
+#     && apt-get remove -y librealsense2-udev-rules \
+#     && apt-get install -y librealsense2-udev-rules=2.30.0-5ubuntu5~1.gbp9f99fa \
+#     && rm -rf /var/lib/apt/lists/*
+#     # && apt-get install -y librealsense2-utils librealsense2-dev ros-melodic-ddynamic-reconfigure \
+
+RUN apt-get update \
+    && apt-get install -y git libssl-dev libusb-1.0-0-dev pkg-config libgtk-3-dev ros-melodic-ddynamic-reconfigure \
+    && git clone --depth=1 --branch v2.50.0 https://github.com/ryrobotics/librealsense /opt/librealsense \
+    && cd /opt/librealsense && ./scripts/setup_udev_rules.sh \
+    && mkdir build && cd build \
+    && cmake .. -DBUILD_EXAMPLES=true \
+                -DCMAKE_BUILD_TYPE=release \
+                -DFORCE_RSUSB_BACKEND=false \
+                -DBUILD_WITH_CUDA=true \
+    && make -j$(($(nproc)-1)) && make install \
+    && rm -rf /opt/librealsense \
+    && rm -rf /var/lib/apt/lists/*
+
+################################################################################################################################
+#
+# create non-root user
+#
+
+ENV USERNAME usr
+ENV HOME /home/$USERNAME
+
+RUN useradd -m $USERNAME && \
+        echo "$USERNAME:$USERNAME" | chpasswd && \
+        usermod --shell /bin/bash $USERNAME && \
+        usermod -aG sudo $USERNAME && \
+        mkdir -p /etc/sudoers.d && \
+        echo "$USERNAME ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers.d/$USERNAME && \
+        chmod 0440 /etc/sudoers.d/$USERNAME && \
+        # Replace 1000 with your user/group id
+        usermod  --uid 1000 $USERNAME && \
+  groupmod --gid 1000 $USERNAME
+
+USER usr
+WORKDIR /home/${USERNAME}
+
+################################################################################################################################
+#
+# Create ROS catkin_ws to host ROS packages
+#
+# RUN mkdir -p ~/src/vins_ws/src \
+#     && cd ~/src/vins_ws \
+#     && catkin init \
+#     && catkin config --cmake-args -DCMAKE_BUILD_TYPE=Release \
+#     && catkin config --merge-devel \
+#     && catkin config --extend /opt/ros/$ROS_DISTRO \
+#     && catkin build
+# #
+# # Install cv_bridge from source
+# #
+# RUN cd ~/src/vins_ws/src &&\
+#     git clone --branch $ROS_DISTRO https://github.com/ros-perception/vision_opencv &&\ 
+#     cd ~/src/vins_ws/ && catkin build
+
+# RUN cd ~/src && git clone https://github.com/ryrobotics/installLibrealsense \
+#     && cp -r ~/src/installLibrealsense/realsense2_camera ~/src/vins_ws/src \
+#     && cd ~/src/vins_ws/ && catkin build
+
+###############################################################################################################################
+#
+# VINS-FUSION-GPU
+#
+
+# # Dependecies
+# RUN sudo apt-get update && sudo apt-get install -y ros-melodic-tf \
+#     ros-melodic-image-transport \
+#     ros-melodic-rviz
+
+# RUN cd /src/vins_ws/src &&\
+#     git clone https://github.com/pjrambo/VINS-Fusion-gpu
+
+# COPY ./patches/vins-fusion/loop_fusion/CMakeLists.txt /src/vins_ws/src/VINS-Fusion-gpu/loop_fusion/
+# COPY ./patches/vins-fusion/vins_estimator/CMakeLists.txt /src/vins_ws/src/VINS-Fusion-gpu/vins_estimator/
+
+# # Build
+# RUN cd /src/vins_ws/ &&\
+#     bash devel/setup.bash &&\
+#     catkin build camera_models
+
+# RUN cd /src/vins_ws/ &&\
+#     bash devel/setup.bash &&\
+#     catkin build
+
+################################################################################################################################
+
+# # A convenience package that has some launch files to run all VINS nodes at once instead of doing it on multiple terminals
+# # Also has some config YAML files for D435i depth camera
+# RUN cd /src/catkin_ws/src/ &&\
+#     git clone https://github.com/mzahana/jetson_vins_fusion_scripts.git &&\
+#     cd /src/catkin_ws/ && catkin build
+
+
+# RUN echo "source /etc/profile.d/bash_completion.sh" >> /root/.bashrc

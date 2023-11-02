@@ -1,0 +1,46 @@
+FROM ryrobotics/ros_melodic_l4t:base
+
+WORKDIR /
+
+# install ros packages and utils
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ros-melodic-desktop \
+    python3-catkin-tools \
+    netbase wget tmux tmuxinator vim usbutils iputils-ping libspdlog-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+# install VRPN & MAVROS
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ros-melodic-vrpn ros-melodic-vrpn-client-ros ros-melodic-vrpn-client-ros-dbgsym ros-melodic-vrpn-dbgsym \
+    ros-melodic-mavros ros-melodic-mavros-extras ros-melodic-mavros-msgs ros-melodic-mavros-dbgsym ros-melodic-mavros-extras-dbgsym \
+    && rm -rf /var/lib/apt/lists/* \
+    && wget https://raw.githubusercontent.com/mavlink/mavros/master/mavros/scripts/install_geographiclib_datasets.sh \
+    && chmod a+x install_geographiclib_datasets.sh \
+    && ./install_geographiclib_datasets.sh
+
+# install ceres & motion planning related pkg
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ros-melodic-gazebo-msgs \
+    cmake libgoogle-glog-dev libgflags-dev libatlas-base-dev libeigen3-dev libsuitesparse-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN wget http://ceres-solver.org/ceres-solver-2.1.0.tar.gz \
+    && tar zxf ceres-solver-2.1.0.tar.gz && cd ceres-solver-2.1.0 \
+    && mkdir ceres-bin && cd ceres-bin \
+    && cmake .. && make -j6 && make install \
+    && bin/simple_bundle_adjuster ../../ceres-solver-2.1.0/data/problem-16-22106-pre.txt \
+    && cd ../.. && rm -rf ./ceres-solver-2.1.0 ceres-solver-2.1.0.tar.gz
+
+# RUN wget http://ceres-solver.org/ceres-solver-1.14.0.tar.gz \
+#     && tar zxf ceres-solver-1.14.0.tar.gz && cd ceres-solver-1.14.0 \
+#     && mkdir ceres-bin && cd ceres-bin \
+#     && cmake .. && make -j6 && make install \
+#     && bin/simple_bundle_adjuster ../../ceres-solver-1.14.0/data/problem-16-22106-pre.txt \
+#     && cd ../.. && rm -rf ./ceres-solver-1.14.0 ceres-solver-1.14.0.tar.gz
+
+# install RealSense related software
+# RUN apt-get update && apt-get install -y apt-utils software-properties-common \
+#     && apt-key adv --keyserver keyserver.ubuntu.com  --recv-key F6E65AC044F831AC80A06380C8B3A55A6F3EFCDE || apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-key \
+#     && add-apt-repository "deb https://librealsense.intel.com/Debian/apt-repo $(lsb_release -cs) main" -u \
+#     && apt-get install -y librealsense2-utils librealsense2-dev ros-melodic-ddynamic-reconfigure \
+#     && rm -rf /var/lib/apt/lists/*
