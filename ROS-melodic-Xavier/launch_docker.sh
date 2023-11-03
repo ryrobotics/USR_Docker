@@ -1,9 +1,9 @@
 #!/bin/sh
 xhost +
 XSOCK=/tmp/.X11-unix
-XAUTH=/tmp/.docker.xauth
-sudo touch $XAUTH
-sudo xauth nlist $DISPLAY | sed -e 's/^..../ffff/' | xauth -f $XAUTH nmerge -
+# XAUTH=/tmp/.docker.xauth
+# sudo touch $XAUTH
+# sudo xauth nlist $DISPLAY | sed -e 's/^..../ffff/' | xauth -f $XAUTH nmerge -
 
 docker_name='vins'
 
@@ -18,5 +18,4 @@ docker run --privileged  -it --net=host \
            --env="DISPLAY=${DISPLAY}" \
            --env=TERM=xterm-256color \
            --env="QT_X11_NO_MITSHM=1" \
-           --user="usr"  \
            --name=nx_${docker_name} ryrobotics/ros_melodic_l4t:${docker_name} bash

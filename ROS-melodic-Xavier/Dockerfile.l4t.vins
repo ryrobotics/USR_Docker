@@ -93,26 +93,32 @@ RUN apt-get update \
     && rm -rf /var/lib/apt/lists/*
 
 ################################################################################################################################
+
+RUN echo "source /etc/profile.d/bash_completion.sh" >> /root/.bashrc
+
+WORKDIR /src
+
+################################################################################################################################
 #
 # create non-root user
 #
 
-ENV USERNAME usr
-ENV HOME /home/$USERNAME
+# ENV USERNAME usr
+# ENV HOME /home/$USERNAME
 
-RUN useradd -m $USERNAME && \
-        echo "$USERNAME:$USERNAME" | chpasswd && \
-        usermod --shell /bin/bash $USERNAME && \
-        usermod -aG sudo $USERNAME && \
-        mkdir -p /etc/sudoers.d && \
-        echo "$USERNAME ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers.d/$USERNAME && \
-        chmod 0440 /etc/sudoers.d/$USERNAME && \
-        # Replace 1000 with your user/group id
-        usermod  --uid 1000 $USERNAME && \
-  groupmod --gid 1000 $USERNAME
+# RUN useradd -m $USERNAME && \
+#         echo "$USERNAME:$USERNAME" | chpasswd && \
+#         usermod --shell /bin/bash $USERNAME && \
+#         usermod -aG sudo $USERNAME && \
+#         mkdir -p /etc/sudoers.d && \
+#         echo "$USERNAME ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers.d/$USERNAME && \
+#         chmod 0440 /etc/sudoers.d/$USERNAME && \
+#         # Replace 1000 with your user/group id
+#         usermod  --uid 1000 $USERNAME && \
+#   groupmod --gid 1000 $USERNAME
 
-USER usr
-WORKDIR /home/${USERNAME}
+# USER usr
+# WORKDIR /home/${USERNAME}
 
 ################################################################################################################################
 #
@@ -168,6 +174,3 @@ WORKDIR /home/${USERNAME}
 # RUN cd /src/catkin_ws/src/ &&\
 #     git clone https://github.com/mzahana/jetson_vins_fusion_scripts.git &&\
 #     cd /src/catkin_ws/ && catkin build
-
-
-# RUN echo "source /etc/profile.d/bash_completion.sh" >> /root/.bashrc
