@@ -1,5 +1,10 @@
 FROM px4io/px4-dev-ros-noetic
 
+ENV NVIDIA_VISIBLE_DEVICES \
+    ${NVIDIA_VISIBLE_DEVICES:-all}
+ENV NVIDIA_DRIVER_CAPABILITIES \
+    ${NVIDIA_DRIVER_CAPABILITIES:+$NVIDIA_DRIVER_CAPABILITIES,}graphics
+
 # install ros packages
 RUN apt-get update && apt-get install -y --no-install-recommends \
     ros-noetic-desktop-full \
@@ -8,7 +13,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # install mavros & VRPN
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    ros-noetic-mavros ros-noetic-mavros-extras ros-noetic-mavros-msgs ros-noetic-mavros-dbgsym ros-noetic-mavros-extras-dbgsym \
+    ros-noetic-mavros ros-noetic-mavros-extras ros-noetic-mavros-msgs \
     # ros-noetic-vrpn ros-noetic-vrpn-client-ros ros-noetic-vrpn-client-ros-dbgsym ros-noetic-vrpn-dbgsym \
     python3-catkin-tools \
     netbase wget tmux tmuxinator vim \
