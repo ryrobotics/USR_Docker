@@ -19,6 +19,7 @@ then
         --env="QT_X11_NO_MITSHM=1" \
         --volume /tmp/.X11-unix:/tmp/.X11-unix:rw \
         --volume ~/melodic_src:/src/:rw \
+        --volume ~/Public/gazebo_models:/root/.gazebo/models/:ro \
         --restart=always \
         --name=px4_cuda ryrobotics/ros_melodic_cuda:base bash
 fi
