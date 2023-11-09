@@ -28,6 +28,7 @@ then
         --volume /tmp/.X11-unix:/tmp/.X11-unix:rw \
         --volume /dev:/dev:rw \
         --volume ~/src:/src/:rw \
+        --volume ~/Public/gazebo_models:/root/.gazebo/models/:ro \
         --restart=always \
         --name=nx_${docker_name} ryrobotics/ros_melodic_l4t:${docker_name} bash
 fi

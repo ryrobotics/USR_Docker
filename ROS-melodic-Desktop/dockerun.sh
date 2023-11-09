@@ -13,6 +13,7 @@ then
         --env="QT_X11_NO_MITSHM=1" \
         --volume /tmp/.X11-unix:/tmp/.X11-unix:rw \
         --volume ~/melodic_src:/src/:rw \
+        --volume ~/Public/gazebo_models:/root/.gazebo/models/:ro \
         --restart=always \
         --name=nuc_px4 ryrobotics/ros_melodic_nuc:mavros bash
 
