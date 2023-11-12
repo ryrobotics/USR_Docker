@@ -1,74 +1,89 @@
+# 
+# This is a Dockerfile for building OpenCV debian packages
+# with CUDA, cuDNN, GStreamer, ect enabled.  You can then take
+# the output .deb packages from /opt/opencv/build and install 
+# them into other containers. Or if you need to build a different
+# version you can include it in your container's build chain.
 #
-# this dockerfile roughly follows the 'Ubuntu install of ROS Melodic' from:
-#   http://wiki.ros.org/melodic/Installation/Ubuntu
-#
+
 ARG BASE_IMAGE=ryrobotics/ros_melodic_l4t:ceres
 FROM ${BASE_IMAGE}
 
-ENV ROS_DISTRO=melodic
-
 ENV DEBIAN_FRONTEND=noninteractive
+ENV CUDA_HOME="/usr/local/cuda"
+ENV PATH="/usr/local/cuda/bin:${PATH}"
+ENV LD_LIBRARY_PATH="/usr/local/cuda/lib64:${LD_LIBRARY_PATH}"
 
 WORKDIR /opt
 
-RUN apt-get update && apt-get install -y --no-install-recommends \
-        software-properties-common \
-        apt-utils \
-        net-tools \
-        bash-completion \
-        python3-pip \
-        libcurl4-openssl-dev \
-        && rm -rf /var/lib/apt/lists/*
-
-################################################################################################################################
 #
-# OpenCV
+# build OpenCV - https://github.com/mdegans/nano_build_opencv/blob/master/build_opencv.sh
 #
-# remove prebuilt opencv
-RUN apt-get purge -y libopencv* python-opencv \
-    && apt-get update \
-    && apt-get install -y --no-install-recommends \
-    build-essential pkg-config file\
-    cmake libavcodec-dev libavformat-dev libavutil-dev \
-    libglew-dev libgtk2.0-dev libgtk-3-dev libjpeg-dev libpng-dev libpostproc-dev \
-    libswscale-dev libtbb-dev libtiff5-dev libv4l-dev libxvidcore-dev \
-    libx264-dev qt5-default zlib1g-dev libgl1 libglvnd-dev pkg-config \
-    libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev mesa-utils \
-    python2.7-dev python3-dev python-numpy python3-numpy \
-    && rm -rf /var/lib/apt/lists/*
-
-# OpenCV looks for the cuDNN version in cudnn_version.h, but it's been renamed to cudnn_version_v8.h
-RUN ln -s /usr/include/aarch64-linux-gnu/cudnn_version_v8.h /usr/include/aarch64-linux-gnu/cudnn_version.h
 
 # ARG OPENCV_VERSION="3.4.1"
 ARG OPENCV_VERSION="3.4.5"
-RUN cd /opt &&\
-    git clone --depth 1 --branch ${OPENCV_VERSION} https://github.com/opencv/opencv.git &&\
-    cd /opt/opencv && mkdir build && cd build &&\
-    cmake   -D CMAKE_BUILD_TYPE=RELEASE \
-            -D BUILD_EXAMPLES=OFF \
-            -D BUILD_TESTS=OFF \
-            -D BUILD_PERF_TESTS=OFF \
-            -D CPACK_BINARY_DEB=ON \
-            -D EIGEN_INCLUDE_PATH=/usr/include/eigen3 \
-	          -D WITH_EIGEN=ON \
-            -D CMAKE_INSTALL_PREFIX=/usr/local \
-            -D BUILD_opencv_java=OFF \
-            -D WITH_CUDA=ON \
-            -D CUDA_ARCH_BIN=7.2 \
-            -D CUDA_ARCH_PTX="" \
-            -D ENABLE_FAST_MATH=ON \
-            -D CUDA_FAST_MATH=ON \
-            -D WITH_CUBLAS=ON \
-            -D WITH_LIBV4L=ON \
-            -D WITH_GSTREAMER=ON \
-            -D WITH_GSTREAMER_0_10=OFF \
-            -D WITH_QT=ON \
-            -D WITH_OPENGL=ON \
-            -D WITH_IPP=OFF \
-            -D CUDA_NVCC_FLAGS="--expt-relaxed-constexpr" \
-            -D WITH_TBB=ON \
-            ../
+# architecture-specific build options
+ARG CUDA_ARCH_BIN="5.3,6.2,7.2"
+# NEON only for ARM
+ARG ENABLE_NEON="ON"
+
+# remove prebuilt opencv && install dependencies
+# https://github.com/dusty-nv/jetson-containers/blob/master/packages/opencv/opencv_builder
+RUN apt-get purge -y libopencv* python-opencv \
+    && apt-get update && apt-get install -y --no-install-recommends \
+    build-essential gfortran cmake git file tar \
+    libatlas-base-dev libavcodec-dev libavformat-dev libavresample-dev libcanberra-gtk3-module \
+    libdc1394-22-dev libeigen3-dev libglew-dev libgstreamer-plugins-base1.0-dev \
+    libgstreamer-plugins-good1.0-dev libgstreamer1.0-dev libgtk-3-dev libjpeg-dev \
+    libjpeg8-dev libjpeg-turbo8-dev liblapack-dev liblapacke-dev libopenblas-dev \
+    libpng-dev libpostproc-dev libswscale-dev libtbb-dev libtbb2 libtesseract-dev \
+    libtiff-dev libv4l-dev libxine2-dev libxvidcore-dev libx264-dev libgtkglext1 \
+    libgtkglext1-dev pkg-config qv4l2 v4l-utils zlib1g-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+# OpenCV looks for the cuDNN version in cudnn_version.h, but it's been renamed to cudnn_version_v8.h
+RUN ln -s /usr/include/$(uname -i)-linux-gnu/cudnn_version_v8.h /usr/include/$(uname -i)-linux-gnu/cudnn_version.h
+
+# clone and configure OpenCV repo
+RUN git clone --depth 1 --branch ${OPENCV_VERSION} https://github.com/opencv/opencv.git && \
+    git clone --depth 1 --branch ${OPENCV_VERSION} https://github.com/opencv/opencv_contrib.git && \
+    cd opencv && \
+    mkdir build && \
+    cd build && \
+    echo "configuring OpenCV ${OPENCV_VERSION}, CUDA_ARCH_BIN=${CUDA_ARCH_BIN}, ENABLE_NEON=${ENABLE_NEON}" && \
+    cmake \
+        -D CPACK_BINARY_DEB=ON \
+	   -D BUILD_EXAMPLES=OFF \
+        -D BUILD_opencv_python2=OFF \
+        -D BUILD_opencv_python3=ON \
+	   -D BUILD_opencv_java=OFF \
+        -D CMAKE_BUILD_TYPE=RELEASE \
+        -D CMAKE_INSTALL_PREFIX=/usr/local \
+        -D CUDA_ARCH_BIN=${CUDA_ARCH_BIN} \
+        -D CUDA_ARCH_PTX= \
+        -D CUDA_FAST_MATH=ON \
+        -D CUDNN_INCLUDE_DIR=/usr/include/$(uname -i)-linux-gnu \
+        -D EIGEN_INCLUDE_PATH=/usr/include/eigen3 \
+	   -D WITH_EIGEN=ON \
+        -D ENABLE_NEON=${ENABLE_NEON} \
+        -D OPENCV_DNN_CUDA=ON \
+        -D OPENCV_ENABLE_NONFREE=ON \
+        -D OPENCV_EXTRA_MODULES_PATH=/opt/opencv_contrib/modules \
+        -D OPENCV_GENERATE_PKGCONFIG=ON \
+        -D WITH_CUBLAS=ON \
+        -D WITH_CUDA=ON \
+        -D WITH_CUDNN=ON \
+        -D WITH_GSTREAMER=ON \
+        -D WITH_LIBV4L=ON \
+        -D WITH_OPENGL=ON \
+	   -D WITH_OPENCL=OFF \
+	   -D WITH_IPP=OFF \
+        -D WITH_TBB=ON \
+	   -D BUILD_TIFF=ON \
+	   -D BUILD_PERF_TESTS=OFF \
+	   -D BUILD_TESTS=OFF \
+	   ../
+
 
 # references to related OpenCV compilation problems:
 # Ref1: https://forums.developer.nvidia.com/t/opencv-with-gl-support-at-xavier/76752
@@ -80,14 +95,16 @@ RUN cd /opt &&\
 RUN cd /usr/lib/aarch64-linux-gnu/ &&\
     ln -sf libGL.so.1.0.0 libGL.so
 
-RUN cd /opt/opencv/build && make -j$(nproc)
-RUN cd /opt/opencv/build && make install
-RUN cd /opt/opencv/build && make package
+RUN cd opencv/build && make -j$(nproc)
+RUN cd opencv/build && make install
+RUN cd opencv/build && make package
+
 # Make OpenCV debian pkgs so it can be easily installed later
-RUN cd /opt/opencv/build/ && tar -czvf OpenCV-${OPENCV_VERSION}-aarch64.tar.gz *.deb
+RUN cd opencv/build && tar -czvf OpenCV-${OPENCV_VERSION}-$(uname -i).tar.gz *.deb
 RUN cp /opt/opencv/build/OpenCV-${OPENCV_VERSION}-aarch64.tar.gz /opt
+
 #Can save ~ 10GB !
-RUN rm -rf /opt/opencv/build
+RUN rm -rf /opt/opencv*
 
 # Check opencv verison
 RUN pkg-config --modversion opencv
