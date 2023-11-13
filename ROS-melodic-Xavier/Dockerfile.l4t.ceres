@@ -7,7 +7,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     ros-melodic-desktop \
     python3-catkin-tools python3-pip \
     netbase wget tmux tmuxinator vim usbutils iputils-ping libspdlog-dev \
-    software-properties-common apt-utils net-tools bash-completion \
+    software-properties-common apt-utils net-tools bash-completion netcat \
     && rm -rf /var/lib/apt/lists/*
 
 # install VRPN & MAVROS
